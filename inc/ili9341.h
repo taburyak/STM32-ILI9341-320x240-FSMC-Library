@@ -21,8 +21,8 @@
 #define LCD_BASE0        		((uint32_t)0x60000000)
 #define LCD_BASE1        		((uint32_t)0x60080000)
 
-#define LCD_CmdWrite(command)	*(volatile uint16_t *) (LCD_BASE0)= (command)
-#define LCD_DataWrite(data)		*(volatile uint16_t *) (LCD_BASE1)= (data)
+#define LCD_CmdWrite(command)	*(volatile uint16_t *) (LCD_BASE0) = (command)
+#define LCD_DataWrite(data)		*(volatile uint16_t *) (LCD_BASE1) = (data)
 #define	LCD_StatusRead()		*(volatile uint16_t *) (LCD_BASE0) //if use read  Mcu interface DB0~DB15 needs increase pull high
 #define	LCD_DataRead()			*(volatile uint16_t *) (LCD_BASE1) //if use read  Mcu interface DB0~DB15 needs increase pull high
 

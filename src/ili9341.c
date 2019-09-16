@@ -579,7 +579,7 @@ void lcdDrawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
  */
 void lcdFillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
 {
-	lcdDrawVLine(x0, y0 - r, y0 - r + 2 * r + 1, color);
+	lcdDrawVLine(x0, y0 - r, y0 + r + 1, color);
 	lcdFillCircleHelper(x0, y0, r, 3, 0, color);
 }
 
@@ -617,13 +617,13 @@ void lcdFillCircleHelper(int16_t x0, int16_t y0, int16_t r, uint8_t cornername, 
 
 		if (cornername & 0x1)
 		{
-			lcdDrawVLine(x0 + x, y0 - y, y0 - y + 2 * y + 1 + delta, color);
-			lcdDrawVLine(x0 + y, y0 - x, y0 - x + 2 * x + 1 + delta, color);
+			lcdDrawVLine(x0 + x, y0 - y, y0 + y + 1 + delta, color);
+			lcdDrawVLine(x0 + y, y0 - x, y0 + x + 1 + delta, color);
 		}
 		if (cornername & 0x2)
 		{
-			lcdDrawVLine(x0 - x, y0 - y, y0 - y + 2 * y + 1 + delta, color);
-			lcdDrawVLine(x0 - y, y0 - x, y0 - x + 2 * x + 1 + delta, color);
+			lcdDrawVLine(x0 - x, y0 - y, y0 + y + 1 + delta, color);
+			lcdDrawVLine(x0 - y, y0 - x, y0 + x + 1 + delta, color);
 		}
 	}
 }
