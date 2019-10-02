@@ -2,7 +2,7 @@
  * colors.h
  *
  *  Created on: 22 бер. 2018 р.
- *      Author: Andriy
+ *      Author: Andriy Honcharenko
  */
 
 #ifndef COLORS_H_

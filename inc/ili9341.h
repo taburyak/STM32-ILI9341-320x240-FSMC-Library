@@ -2,7 +2,8 @@
  * ili9341.h
  *
  *  Created on: 22 бер. 2018 р.
- *      Author: Andriy
+ *  Author: Andriy Honcharenko
+ *  Version 1.1 date: 24.09.2019
  */
 
 #ifndef ILI9341_H_
@@ -98,11 +99,19 @@ void					lcdSetTextWrap(uint8_t w);
 void              		lcdSetOrientation(lcdOrientationTypeDef orientation);
 void					lcdSetCursor(unsigned short x, unsigned short y);
 void              		lcdSetWindow(unsigned short x0, unsigned short y0, unsigned short x1, unsigned short y1);
+void					lcdInversionOff(void);
+void					lcdInversionOn(void);
+void					lcdDisplayOff(void);
+void					lcdDisplayOn(void);
+void					lcdTearingOff(void);
+void					lcdTearingOn(bool m);
 uint16_t          		lcdGetWidth(void);
 uint16_t          		lcdGetHeight(void);
 uint16_t          		lcdGetControllerID(void);
 lcdOrientationTypeDef  	lcdGetOrientation(void);
 sFONT*					lcdGetTextFont(void);
 lcdPropertiesTypeDef   	lcdGetProperties(void);
+uint16_t				lcdReadPixel(uint16_t x, uint16_t y);
+uint16_t 				lcdColor565(uint8_t r, uint8_t g, uint8_t b);
 
 #endif /* ILI9341_H_ */
