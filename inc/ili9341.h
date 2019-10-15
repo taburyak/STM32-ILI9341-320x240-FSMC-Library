@@ -99,6 +99,8 @@ void					lcdSetTextWrap(uint8_t w);
 void              		lcdSetOrientation(lcdOrientationTypeDef orientation);
 void					lcdSetCursor(unsigned short x, unsigned short y);
 void              		lcdSetWindow(unsigned short x0, unsigned short y0, unsigned short x1, unsigned short y1);
+void					lcdBacklightOff(void);
+void					lcdBacklightOn(void);
 void					lcdInversionOff(void);
 void					lcdInversionOn(void);
 void					lcdDisplayOff(void);

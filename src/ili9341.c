@@ -33,7 +33,6 @@ static void        		lcdReset(void);
 static void        		lcdWriteCommand(unsigned char command);
 static void             lcdWriteData(unsigned short data);
 static unsigned short	lcdReadData(void);
-//static uint16_t 		lcdColor565(uint8_t r, uint8_t g, uint8_t b);
 
 static unsigned char    lcdBuildMemoryAccessControlConfig(
                                 bool rowAddressOrder,
@@ -203,90 +202,6 @@ void lcdInit(void)
   lcdWriteCommand(ILI9341_MEMORYWRITE);
 }
 
-void lcdSetCursor(unsigned short x, unsigned short y)
-{
-	cursorXY.x = x;
-	cursorXY.y = y;
-	lcdSetWindow(x, y, x, y);
-}
-
-/**
- * \brief Sets window address
- *
- * \param x0         Left top window x-coordinate
- * \param y0         Left top window y-coordinate
- * \param x1         Rigth bottom window x-coordinate
- * \param y1         Rigth bottom window y-coordinate
- *
- * \return void
- */
-void lcdSetWindow(unsigned short x0, unsigned short y0, unsigned short x1, unsigned short y1)
-{
-  lcdWriteCommand(ILI9341_COLADDRSET);
-  lcdWriteData((x0 >> 8) & 0xFF);
-  lcdWriteData(x0 & 0xFF);
-  lcdWriteData((x1 >> 8) & 0xFF);
-  lcdWriteData(x1 & 0xFF);
-  lcdWriteCommand(ILI9341_PAGEADDRSET);
-  lcdWriteData((y0 >> 8) & 0xFF);
-  lcdWriteData(y0 & 0xFF);
-  lcdWriteData((y1 >> 8) & 0xFF);
-  lcdWriteData(y1 & 0xFF);
-  lcdWriteCommand(ILI9341_MEMORYWRITE);
-}
-
-void lcdInversionOff(void)
-{
-	lcdWriteCommand(ILI9341_INVERTOFF);
-}
-
-void lcdInversionOn(void)
-{
-	lcdWriteCommand(ILI9341_INVERTON);
-}
-
-void lcdDisplayOff(void)
-{
-	lcdWriteCommand(ILI9341_DISPLAYOFF);
-	LCD_BL_OFF();
-}
-
-void lcdDisplayOn(void)
-{
-	lcdWriteCommand(ILI9341_DISPLAYON);
-	LCD_BL_ON();
-}
-
-void lcdTearingOff(void)
-{
-	lcdWriteCommand(ILI9341_TEARINGEFFECTOFF);
-}
-
-void lcdTearingOn(bool m)
-{
-	lcdWriteCommand(ILI9341_TEARINGEFFECTON);
-	lcdWriteData(m);
-}
-
-void lcdDrawImage(uint16_t x, uint16_t y, GUI_CONST_STORAGE GUI_BITMAP* pBitmap)
-{
-	if((x >= lcdProperties.width) || (y >= lcdProperties.height)) return;
-	if((x + pBitmap->xSize - 1) >= lcdProperties.width) return;
-	if((y + pBitmap->ySize - 1) >= lcdProperties.height) return;
-
-	for (int i = 0; i < pBitmap->ySize; ++i)
-	{
-		lcdDrawPixels(x, y + i, (uint16_t*)(pBitmap->pData + i * pBitmap->bytesPerLine), pBitmap->bytesPerLine / (pBitmap->bitsPerPixel / 8));
-	}
-}
-
-void lcdHome(void)
-{
-	cursorXY.x = 0;
-	cursorXY.y = 0;
-	lcdSetWindow(0, 0, lcdProperties.width - 1, lcdProperties.height - 1);
-}
-
 void lcdTest(void)
 {
 	lcdSetWindow(0, 0, lcdProperties.width - 1, lcdProperties.height - 1);
@@ -336,56 +251,6 @@ void lcdDrawPixel(uint16_t x, uint16_t y, uint16_t color)
 
     lcdSetWindow(x, y, x, y);
     lcdWriteData(color);
-}
-
-/**
- * \brief Reads a point from the specified coordinates
- *
- * \param x        x-Coordinate
- * \param y        y-Coordinate
- *
- * \return uint16_t     Color
- */
-uint16_t lcdReadPixel(uint16_t x, uint16_t y)
-{
-    uint16_t temp[3];
-    // Clip
-    if ((x < 0) || (y < 0) || (x >= lcdProperties.width) || (y >= lcdProperties.height))
-        return 0;
-
-    lcdWriteCommand(ILI9341_COLADDRSET);
-    lcdWriteData((x >> 8) & 0xFF);
-    lcdWriteData(x & 0xFF);
-
-    lcdWriteCommand(ILI9341_PAGEADDRSET);
-    lcdWriteData((y >> 8) & 0xFF);
-    lcdWriteData(y & 0xFF);
-
-    lcdWriteCommand(ILI9341_MEMORYREAD);
-
-    temp[0] = lcdReadData(); // dummy read
-    temp[1] = lcdReadData();
-    temp[2] = lcdReadData();
-
-    return lcdColor565((temp[1] >> 8) & 0xFF, temp[1] & 0xFF, (temp[2] >> 8) & 0xFF);
-}
-
-uint16_t lcdColor565(uint8_t r, uint8_t g, uint8_t b)
-{
-	return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-}
-
-static void lcdDrawPixels(uint16_t x, uint16_t y, uint16_t *data, uint32_t dataLength)
-{
-  uint32_t i = 0;
-
-  lcdSetWindow(x, y, lcdProperties.width - 1, lcdProperties.height - 1);
-
-  do
-  {
-    lcdWriteData(data[i++]);
-  }
-  while (i < dataLength);
 }
 
 void lcdDrawHLine(uint16_t x0, uint16_t x1, uint16_t y, uint16_t color)
@@ -655,6 +520,25 @@ void lcdDrawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color)
 	}
 }
 
+/**************************************************************************/
+/*!
+   @brief   Draw a triangle with no fill color
+    @param    x0  Vertex #0 x coordinate
+    @param    y0  Vertex #0 y coordinate
+    @param    x1  Vertex #1 x coordinate
+    @param    y1  Vertex #1 y coordinate
+    @param    x2  Vertex #2 x coordinate
+    @param    y2  Vertex #2 y coordinate
+    @param    color 16-bit 5-6-5 Color to draw with
+*/
+/**************************************************************************/
+void lcdDrawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
+{
+    lcdDrawLine(x0, y0, x1, y1, color);
+    lcdDrawLine(x1, y1, x2, y2, color);
+    lcdDrawLine(x2, y2, x0, y0, color);
+}
+
 /**
  * \brief Draws a filled circle defined by a pair of coordinates and radius
  *
@@ -762,24 +646,6 @@ void lcdFillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uin
 	lcdFillCircleHelper(x + r, y + r, r, 2, h - 2 * r - 1, color);
 }
 
-/**************************************************************************/
-/*!
-   @brief   Draw a triangle with no fill color
-    @param    x0  Vertex #0 x coordinate
-    @param    y0  Vertex #0 y coordinate
-    @param    x1  Vertex #1 x coordinate
-    @param    y1  Vertex #1 y coordinate
-    @param    x2  Vertex #2 x coordinate
-    @param    y2  Vertex #2 y coordinate
-    @param    color 16-bit 5-6-5 Color to draw with
-*/
-/**************************************************************************/
-void lcdDrawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
-{
-    lcdDrawLine(x0, y0, x1, y1, color);
-    lcdDrawLine(x1, y1, x2, y2, color);
-    lcdDrawLine(x2, y2, x0, y0, color);
-}
 
 /**************************************************************************/
 /*!
@@ -876,116 +742,23 @@ void lcdFillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2,
     }
 }
 
-void lcdSetOrientation(lcdOrientationTypeDef value)
+void lcdDrawImage(uint16_t x, uint16_t y, GUI_CONST_STORAGE GUI_BITMAP* pBitmap)
 {
-	lcdProperties.orientation = value;
-	lcdWriteCommand(ILI9341_MEMCONTROL);
+	if((x >= lcdProperties.width) || (y >= lcdProperties.height)) return;
+	if((x + pBitmap->xSize - 1) >= lcdProperties.width) return;
+	if((y + pBitmap->ySize - 1) >= lcdProperties.height) return;
 
-	switch (lcdProperties.orientation)
+	for (int i = 0; i < pBitmap->ySize; ++i)
 	{
-		case LCD_ORIENTATION_PORTRAIT:
-			lcdWriteData(lcdPortraitConfig);
-			lcdProperties.width = ILI9341_PIXEL_WIDTH;
-			lcdProperties.height = ILI9341_PIXEL_HEIGHT;
-			break;
-		case LCD_ORIENTATION_PORTRAIT_MIRROR:
-			lcdWriteData(lcdPortraitMirrorConfig);
-			lcdProperties.width = ILI9341_PIXEL_WIDTH;
-			lcdProperties.height = ILI9341_PIXEL_HEIGHT;
-			break;
-		case LCD_ORIENTATION_LANDSCAPE:
-			lcdWriteData(lcdLandscapeConfig);
-			lcdProperties.width = ILI9341_PIXEL_HEIGHT;
-			lcdProperties.height = ILI9341_PIXEL_WIDTH;
-			break;
-		case LCD_ORIENTATION_LANDSCAPE_MIRROR:
-			lcdWriteData(lcdLandscapeMirrorConfig);
-			lcdProperties.width = ILI9341_PIXEL_HEIGHT;
-			lcdProperties.height = ILI9341_PIXEL_WIDTH;
-			break;
-		default:
-			break;
+		lcdDrawPixels(x, y + i, (uint16_t*)(pBitmap->pData + i * pBitmap->bytesPerLine), pBitmap->bytesPerLine / (pBitmap->bitsPerPixel / 8));
 	}
+}
 
-	//lcdWriteCommand(ILI9341_MEMORYWRITE);
+void lcdHome(void)
+{
+	cursorXY.x = 0;
+	cursorXY.y = 0;
 	lcdSetWindow(0, 0, lcdProperties.width - 1, lcdProperties.height - 1);
-}
-
-lcdOrientationTypeDef lcdGetOrientation(void)
-{
-  return lcdProperties.orientation;
-}
-
-uint16_t lcdGetWidth(void)
-{
-  return lcdProperties.width;
-}
-
-uint16_t lcdGetHeight(void)
-{
-  return lcdProperties.height;
-}
-
-uint16_t lcdGetControllerID(void)
-{
-	uint16_t id;
-	lcdWriteCommand(ILI9341_READID4);
-	id = lcdReadData();
-	id = lcdReadData();
-	id = ((uint16_t) lcdReadData() << 8);
-	id |= lcdReadData();
-	return id;
-}
-
-lcdPropertiesTypeDef lcdGetProperties(void)
-{
-  return lcdProperties;
-}
-
-sFONT* lcdGetTextFont(void)
-{
-	return lcdFont.pFont;
-}
-
-static void lcdReset(void)
-{
-	lcdWriteCommand(ILI9341_SOFTRESET);
-	HAL_Delay(50);
-}
-
-// Write an 8 bit command to the IC driver
-static void lcdWriteCommand(unsigned char command)
-{
-	LCD_CmdWrite(command);
-}
-
-// Write an 16 bit data word to the IC driver
-static void lcdWriteData(unsigned short data)
-{
-	LCD_DataWrite(data);
-}
-
-static unsigned short lcdReadData(void)
-{
-	return LCD_DataRead();
-}
-
-static unsigned char lcdBuildMemoryAccessControlConfig(
-                        bool rowAddressOrder,
-                        bool columnAddressOrder,
-                        bool rowColumnExchange,
-                        bool verticalRefreshOrder,
-                        bool colorOrder,
-                        bool horizontalRefreshOrder)
-{
-  unsigned char value 				= 0;
-  if(horizontalRefreshOrder) value 	|= ILI9341_MADCTL_MH;
-  if(colorOrder) value 				|= ILI9341_MADCTL_BGR;
-  if(verticalRefreshOrder) value 	|= ILI9341_MADCTL_ML;
-  if(rowColumnExchange) value 		|= ILI9341_MADCTL_MV;
-  if(columnAddressOrder) value 		|= ILI9341_MADCTL_MX;
-  if(rowAddressOrder) value 		|= ILI9341_MADCTL_MY;
-  return value;
 }
 
 /**
@@ -1000,42 +773,6 @@ static unsigned char lcdBuildMemoryAccessControlConfig(
  *
  * \return void
  */
-void _lcdDrawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg)
-{
-	if ((x >= lcdProperties.width) || 			// Clip right
-			(y >= lcdProperties.height) || 		// Clip bottom
-			((x + lcdFont.pFont->Width) < 0) || // Clip left
-			((y + lcdFont.pFont->Height) < 0))  // Clip top
-		return;
-
-	uint8_t fontCoeff = lcdFont.pFont->Height / 8;
-
-	lcdSetWindow(x, y, x + lcdFont.pFont->Height, y + lcdFont.pFont->Height);
-
-	for(uint8_t h = 0; h < lcdFont.pFont->Height; h++)
-	{
-		uint8_t line;
-
-		for (int i = 0; i < fontCoeff; ++i)
-		{
-			line = lcdFont.pFont->table[((c - 0x20) * lcdFont.pFont->Height * fontCoeff) + (h * fontCoeff) + i];
-
-			for (int i = 0; i < 8; ++i)
-			{
-				if((line & 0x80) == 0x80)
-				{
-					lcdWriteData(color);
-				}
-				else if (bg != color)
-				{
-					lcdWriteData(bg);
-				}
-				line <<= 1;
-			}
-		}
-	}
-}
-
 void lcdDrawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg)
 {
 	if ((x >= lcdProperties.width) || 			// Clip right
@@ -1073,44 +810,6 @@ void lcdDrawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t
 
 		xP = 0;
 	}
-}
-
-/**
- * \brief Sets the font
- *
- * \param font pointer font
- *
- * \return void
- */
-void lcdSetTextFont(sFONT* font)
-{
-	lcdFont.pFont = font;
-}
-
-/**
- * \brief Sets the text color
- *
- * \param c		Text color
- * \param b		Background color
- *
- * \return void
- */
-void lcdSetTextColor(uint16_t c, uint16_t b)
-{
-	lcdFont.TextColor = c;
-	lcdFont.BackColor = b;
-}
-
-/**
- * \brief Set Text wrap
- *
- * \param w
- *
- * \return void
- */
-void lcdSetTextWrap(uint8_t w)
-{
-	lcdFont.TextWrap = w;
 }
 
 /**
@@ -1164,4 +863,281 @@ void lcdPrintf(const char *fmt, ...)
 			cursorXY.y = 0;
 		}
 	}
+}
+
+/**
+ * \brief Sets the font
+ *
+ * \param font pointer font
+ *
+ * \return void
+ */
+void lcdSetTextFont(sFONT* font)
+{
+	lcdFont.pFont = font;
+}
+
+/**
+ * \brief Sets the text color
+ *
+ * \param c		Text color
+ * \param b		Background color
+ *
+ * \return void
+ */
+void lcdSetTextColor(uint16_t c, uint16_t b)
+{
+	lcdFont.TextColor = c;
+	lcdFont.BackColor = b;
+}
+
+/**
+ * \brief Set Text wrap
+ *
+ * \param w
+ *
+ * \return void
+ */
+void lcdSetTextWrap(uint8_t w)
+{
+	lcdFont.TextWrap = w;
+}
+
+void lcdSetOrientation(lcdOrientationTypeDef value)
+{
+	lcdProperties.orientation = value;
+	lcdWriteCommand(ILI9341_MEMCONTROL);
+
+	switch (lcdProperties.orientation)
+	{
+		case LCD_ORIENTATION_PORTRAIT:
+			lcdWriteData(lcdPortraitConfig);
+			lcdProperties.width = ILI9341_PIXEL_WIDTH;
+			lcdProperties.height = ILI9341_PIXEL_HEIGHT;
+			break;
+		case LCD_ORIENTATION_PORTRAIT_MIRROR:
+			lcdWriteData(lcdPortraitMirrorConfig);
+			lcdProperties.width = ILI9341_PIXEL_WIDTH;
+			lcdProperties.height = ILI9341_PIXEL_HEIGHT;
+			break;
+		case LCD_ORIENTATION_LANDSCAPE:
+			lcdWriteData(lcdLandscapeConfig);
+			lcdProperties.width = ILI9341_PIXEL_HEIGHT;
+			lcdProperties.height = ILI9341_PIXEL_WIDTH;
+			break;
+		case LCD_ORIENTATION_LANDSCAPE_MIRROR:
+			lcdWriteData(lcdLandscapeMirrorConfig);
+			lcdProperties.width = ILI9341_PIXEL_HEIGHT;
+			lcdProperties.height = ILI9341_PIXEL_WIDTH;
+			break;
+		default:
+			break;
+	}
+
+	//lcdWriteCommand(ILI9341_MEMORYWRITE);
+	lcdSetWindow(0, 0, lcdProperties.width - 1, lcdProperties.height - 1);
+}
+
+void lcdSetCursor(unsigned short x, unsigned short y)
+{
+	cursorXY.x = x;
+	cursorXY.y = y;
+	lcdSetWindow(x, y, x, y);
+}
+
+/**
+ * \brief Sets window address
+ *
+ * \param x0         Left top window x-coordinate
+ * \param y0         Left top window y-coordinate
+ * \param x1         Rigth bottom window x-coordinate
+ * \param y1         Rigth bottom window y-coordinate
+ *
+ * \return void
+ */
+void lcdSetWindow(unsigned short x0, unsigned short y0, unsigned short x1, unsigned short y1)
+{
+  lcdWriteCommand(ILI9341_COLADDRSET);
+  lcdWriteData((x0 >> 8) & 0xFF);
+  lcdWriteData(x0 & 0xFF);
+  lcdWriteData((x1 >> 8) & 0xFF);
+  lcdWriteData(x1 & 0xFF);
+  lcdWriteCommand(ILI9341_PAGEADDRSET);
+  lcdWriteData((y0 >> 8) & 0xFF);
+  lcdWriteData(y0 & 0xFF);
+  lcdWriteData((y1 >> 8) & 0xFF);
+  lcdWriteData(y1 & 0xFF);
+  lcdWriteCommand(ILI9341_MEMORYWRITE);
+}
+
+void lcdBacklightOff(void)
+{
+	LCD_BL_OFF();
+}
+
+void lcdBacklightOn(void)
+{
+	LCD_BL_ON();
+}
+
+void lcdInversionOff(void)
+{
+	lcdWriteCommand(ILI9341_INVERTOFF);
+}
+
+void lcdInversionOn(void)
+{
+	lcdWriteCommand(ILI9341_INVERTON);
+}
+
+void lcdDisplayOff(void)
+{
+	lcdWriteCommand(ILI9341_DISPLAYOFF);
+	LCD_BL_OFF();
+}
+
+void lcdDisplayOn(void)
+{
+	lcdWriteCommand(ILI9341_DISPLAYON);
+	LCD_BL_ON();
+}
+
+void lcdTearingOff(void)
+{
+	lcdWriteCommand(ILI9341_TEARINGEFFECTOFF);
+}
+
+void lcdTearingOn(bool m)
+{
+	lcdWriteCommand(ILI9341_TEARINGEFFECTON);
+	lcdWriteData(m);
+}
+
+uint16_t lcdGetWidth(void)
+{
+  return lcdProperties.width;
+}
+
+uint16_t lcdGetHeight(void)
+{
+  return lcdProperties.height;
+}
+
+uint16_t lcdGetControllerID(void)
+{
+	uint16_t id;
+	lcdWriteCommand(ILI9341_READID4);
+	id = lcdReadData();
+	id = lcdReadData();
+	id = ((uint16_t) lcdReadData() << 8);
+	id |= lcdReadData();
+	return id;
+}
+
+lcdOrientationTypeDef lcdGetOrientation(void)
+{
+  return lcdProperties.orientation;
+}
+
+sFONT* lcdGetTextFont(void)
+{
+	return lcdFont.pFont;
+}
+
+lcdPropertiesTypeDef lcdGetProperties(void)
+{
+  return lcdProperties;
+}
+
+/**
+ * \brief Reads a point from the specified coordinates
+ *
+ * \param x        x-Coordinate
+ * \param y        y-Coordinate
+ *
+ * \return uint16_t     Color
+ */
+uint16_t lcdReadPixel(uint16_t x, uint16_t y)
+{
+    uint16_t temp[3];
+    // Clip
+    if ((x < 0) || (y < 0) || (x >= lcdProperties.width) || (y >= lcdProperties.height))
+        return 0;
+
+    lcdWriteCommand(ILI9341_COLADDRSET);
+    lcdWriteData((x >> 8) & 0xFF);
+    lcdWriteData(x & 0xFF);
+
+    lcdWriteCommand(ILI9341_PAGEADDRSET);
+    lcdWriteData((y >> 8) & 0xFF);
+    lcdWriteData(y & 0xFF);
+
+    lcdWriteCommand(ILI9341_MEMORYREAD);
+
+    temp[0] = lcdReadData(); // dummy read
+    temp[1] = lcdReadData();
+    temp[2] = lcdReadData();
+
+    return lcdColor565((temp[1] >> 8) & 0xFF, temp[1] & 0xFF, (temp[2] >> 8) & 0xFF);
+}
+
+uint16_t lcdColor565(uint8_t r, uint8_t g, uint8_t b)
+{
+	return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+}
+
+/*---------Static functions--------------------------*/
+
+static void lcdDrawPixels(uint16_t x, uint16_t y, uint16_t *data, uint32_t dataLength)
+{
+  uint32_t i = 0;
+
+  lcdSetWindow(x, y, lcdProperties.width - 1, lcdProperties.height - 1);
+
+  do
+  {
+    lcdWriteData(data[i++]);
+  }
+  while (i < dataLength);
+}
+
+static void lcdReset(void)
+{
+	lcdWriteCommand(ILI9341_SOFTRESET);
+	HAL_Delay(50);
+}
+
+// Write an 8 bit command to the IC driver
+static void lcdWriteCommand(unsigned char command)
+{
+	LCD_CmdWrite(command);
+}
+
+// Write an 16 bit data word to the IC driver
+static void lcdWriteData(unsigned short data)
+{
+	LCD_DataWrite(data);
+}
+
+static unsigned short lcdReadData(void)
+{
+	return LCD_DataRead();
+}
+
+static unsigned char lcdBuildMemoryAccessControlConfig(
+                        bool rowAddressOrder,
+                        bool columnAddressOrder,
+                        bool rowColumnExchange,
+                        bool verticalRefreshOrder,
+                        bool colorOrder,
+                        bool horizontalRefreshOrder)
+{
+  unsigned char value 				= 0;
+  if(horizontalRefreshOrder) value 	|= ILI9341_MADCTL_MH;
+  if(colorOrder) value 				|= ILI9341_MADCTL_BGR;
+  if(verticalRefreshOrder) value 	|= ILI9341_MADCTL_ML;
+  if(rowColumnExchange) value 		|= ILI9341_MADCTL_MV;
+  if(columnAddressOrder) value 		|= ILI9341_MADCTL_MX;
+  if(rowAddressOrder) value 		|= ILI9341_MADCTL_MY;
+  return value;
 }
